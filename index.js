@@ -7,6 +7,10 @@ const port = 3000
 
 app.use(bodyParser.text({ type: '*/*' }))
 
+const { PROXY_WHITELIST: whitelistStr } = process.env
+const whitelist = (whitelistStr || '').split(/[, ]+/).filter((w) => !!w)
+console.log('whitelist', whitelist)
+
 app.post('*', async (req, res) => {
   console.time('proxy');
 
@@ -17,7 +21,11 @@ app.post('*', async (req, res) => {
    * means proxying to `https://apiex.juno.vn/oss-pos-gate-1/guru/cart_consumer`
    */
   const url = Buffer.from(path.substr(1), 'base64').toString('ascii')
-  if (!url.match(/https?:\/\//)) {
+  if (whitelist.length > 0) {
+    if (whitelist.indexOf(url) === -1) {
+      return res.sendStatus(403)
+    }
+  } else if (!url.match(/https?:\/\//)) {
     return res.sendStatus(404)
   }
 
