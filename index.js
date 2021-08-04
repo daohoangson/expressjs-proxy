@@ -45,14 +45,20 @@ app.post('*', async (req, res) => {
   }
   console.log('input', url, inputHeaders, input)
 
-  const remote = await fetch(
-    url,
-    {
-      method: 'POST',
-      headers: inputHeaders,
-      body: input,
-    }
-  )
+  let remote;
+  try {
+    remote = await fetch(
+      url,
+      {
+        method: 'POST',
+        headers: inputHeaders,
+        body: input,
+      }
+    )
+  } catch (e) {
+    console.error(e)
+    return res.sendStatus(500)
+  }
   const output = await remote.text()
   const { status, headers } = remote
 
