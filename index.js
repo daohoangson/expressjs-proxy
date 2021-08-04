@@ -14,7 +14,7 @@ console.log('whitelist', whitelist)
 app.post('*', async (req, res) => {
   console.time('proxy');
 
-  const { body: input, headers: { ['content-type']: inputContentType }, path } = req
+  const { body: input, path } = req
   console.log('path', path)
 
   /**
@@ -28,7 +28,6 @@ app.post('*', async (req, res) => {
   if (!pathMatch) {
     return res.sendStatus(404)
   }
-  console.log(pathMatch)
 
   const url = Buffer.from(pathMatch[1], 'base64').toString('ascii') + pathMatch[2]
   if (whitelist.length > 0) {
@@ -40,8 +39,14 @@ app.post('*', async (req, res) => {
   }
 
   const inputHeaders = {}
-  if (inputContentType) {
-    inputHeaders['Content-Type'] = inputContentType
+  const reqHeaders = { ...req.headers }
+  for (const headerKey in reqHeaders) {
+    if (!reqHeaders.hasOwnProperty(headerKey)) {
+      continue;
+    }
+    if (headerKey.startsWith('x-') || headerKey === 'content-type') {
+      inputHeaders[headerKey] = reqHeaders[headerKey]
+    }
   }
   console.log('input', url, inputHeaders, input)
 
@@ -60,9 +65,9 @@ app.post('*', async (req, res) => {
     return res.sendStatus(500)
   }
   const output = await remote.text()
-  const { status, headers } = remote
+  const { status, headers: remoteHeaders } = remote
 
-  const outputContentType = headers.get('content-type')
+  const outputContentType = remoteHeaders.get('content-type')
   if (outputContentType) {
     res.setHeader('Content-Type', outputContentType)
   }
