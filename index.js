@@ -18,10 +18,19 @@ app.post('*', async (req, res) => {
   console.log('path', path)
 
   /**
-   * Sending POST request to `/aHR0cHM6Ly9hcGlleC5qdW5vLnZuL29zcy1wb3MtZ2F0ZS0xL2d1cnUvY2FydF9jb25zdW1lcg==`
-   * means proxying to `https://apiex.juno.vn/oss-pos-gate-1/guru/cart_consumer`
+   * Sending POST request to `/aHR0cDovL2RvbWFpbi5jb20=`
+   * means proxying to `http://domain.com`
+   * 
+   * Sending POST request to `/aHR0cDovL2RvbWFpbi5jb20=/some/path`
+   * means proxying to `http://domain.com/some/path`
    */
-  const url = Buffer.from(path.substr(1), 'base64').toString('ascii')
+  const pathMatch = path.match(/^\/([^/]+)(.*)$/)
+  if (!pathMatch) {
+    return res.sendStatus(404)
+  }
+  console.log(pathMatch)
+
+  const url = Buffer.from(pathMatch[1], 'base64').toString('ascii') + pathMatch[2]
   if (whitelist.length > 0) {
     if (whitelist.indexOf(url) === -1) {
       return res.sendStatus(403)
