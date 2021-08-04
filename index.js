@@ -15,6 +15,7 @@ app.post('*', async (req, res) => {
   console.time('proxy');
 
   const { body: input, headers: { ['content-type']: inputContentType }, path } = req
+  console.log('path', path)
 
   /**
    * Sending POST request to `/aHR0cHM6Ly9hcGlleC5qdW5vLnZuL29zcy1wb3MtZ2F0ZS0xL2d1cnUvY2FydF9jb25zdW1lcg==`
