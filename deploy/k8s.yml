@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: proxy
+  labels:
+    service: proxy
+spec:
+  ports:
+  - name: http-3000
+    port: 3000
+    targetPort: http-3000
+  selector:
+    app: proxy
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proxy
+spec:
+  selector:
+    matchLabels:
+      app: proxy
+  template:
+    metadata:
+      labels:
+        app: proxy
+    spec:
+      containers:
+      - name: proxy
+        image: ghcr.io/daohoangson/expressjs-proxy
+        imagePullPolicy: Always
+        ports:
+        - name: http-3000
+          containerPort: 3000
+        readinessProbe:
+          tcpSocket:
+            port: http-3000
+        resources:
+          requests:
+            cpu: 200m
+            memory: 64Mi
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+---
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Issuer
+metadata:
+  name: letsencrypt
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: expressjs-proxy@daohoangson.com
+    privateKeySecretRef:
+      name: letsencrypt
+    http01: {}
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: proxy
+  annotations:
+    certmanager.k8s.io/issuer: letsencrypt
+    kubernetes.io/ingress.class: nginx
+spec:
+  tls:
+  - hosts:
+    - proxy.daohoangson.com
+    secretName: tls
+  rules:
+    - host: proxy.daohoangson.com
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: proxy
+              servicePort: 3000
